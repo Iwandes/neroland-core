@@ -8,6 +8,17 @@ See [`docs/API-STABILITY.md`](docs/API-STABILITY.md) for the versioning policy.
 
 ## [Unreleased]
 
+## [1.17.3] - 2026-11-02
+
+### Fixed
+
+- **1.21.x client crash on startup (`Critical injection failure ... could not find any targets
+  matching 'extractSlot'`).** The item-highlight mixin on `AbstractContainerScreen` targeted the
+  26.x method `extractSlot`, which does not exist before 26.1, so every 1.21.x client failed to
+  launch. It now hooks `renderSlot(GuiGraphics, Slot)` on 1.21.1–1.21.10,
+  `renderSlot(GuiGraphics, Slot, int, int)` on 1.21.11, and `extractSlot` on 26.x as before.
+  Slot highlights now render on 1.21.x as they do on 26.x.
+
 ## [1.17.2] - 2026-10-31
 
 ### Changed
@@ -24,6 +35,8 @@ See [`docs/API-STABILITY.md`](docs/API-STABILITY.md) for the versioning policy.
   Provider creation and deferred-register attachment now share a lock, preventing parallel mod
   constructors from losing registrations in the shared queue. Applied the same fix on NeoForge.
   Failed attachments remain pending instead of being marked as attached.
+
+[1.17.3]: https://github.com/Neroland/neroland-core/releases/tag/v1.17.3
 
 [1.17.2]: https://github.com/Neroland/neroland-core/releases/tag/v1.17.2
 

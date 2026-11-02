@@ -29,7 +29,8 @@ import za.co.neroland.nerolandcore.config.CoreConfig;
  * </ol>
  *
  * <p>Rendering is hooked from a single common client mixin at the head of
- * {@code AbstractContainerScreen.extractSlot}, so the border appears in every
+ * the per-slot draw method ({@code extractSlot} on 26.x, {@code renderSlot} on
+ * 1.21.x), so the border appears in every
  * container screen (vanilla and modded) on all three loaders and is drawn before
  * — i.e. beneath — the item itself. Both knobs are local-only client config:
  * {@code itemHighlightsEnabled} and {@code itemHighlightOpacity}.
