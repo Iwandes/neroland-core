@@ -1,6 +1,8 @@
 package za.co.neroland.nerolandcore.data;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 import org.junit.jupiter.api.Test;
 
@@ -31,5 +33,14 @@ class SavedDataRecoveryTest {
     void theRegistryAwareBackupOverloadRejectsAMissingLevel() {
         assertThrows(IllegalArgumentException.class, () -> SavedDataRecovery.backupNow(
                 null, PlayerActivity.TYPE, new PlayerActivity(), "nerolandcore:player_activity", null));
+    }
+
+    @Test
+    void forcedBackupFailuresReachTheCallerWhilePeriodicFailuresRemainNonfatal() {
+        Exception cause = new java.io.IOException("simulated backup failure");
+        var failure = assertThrows(IllegalStateException.class,
+                () -> SavedDataRecovery.reportBackupFailure("test", true, cause));
+        assertSame(cause, failure.getCause());
+        assertDoesNotThrow(() -> SavedDataRecovery.reportBackupFailure("test", false, cause));
     }
 }

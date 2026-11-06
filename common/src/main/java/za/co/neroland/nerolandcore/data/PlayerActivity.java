@@ -74,6 +74,15 @@ public final class PlayerActivity extends SavedData {
         return lastSeen.containsKey(player);
     }
 
+    Long lastSeen(UUID player) {
+        return lastSeen.get(player);
+    }
+
+    void restoreLastSeen(UUID player, long time) {
+        lastSeen.put(player, time);
+        setDirty();
+    }
+
     /** UUIDs whose last login is older than {@code days} (empty if {@code days <= 0}). */
     public List<UUID> stalerThan(int days) {
         if (days <= 0) {

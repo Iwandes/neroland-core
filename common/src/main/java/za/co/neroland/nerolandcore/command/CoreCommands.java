@@ -190,8 +190,9 @@ public final class CoreCommands {
             return 0;
         }
         MinecraftServer server = player.level().getServer();
-        if (server != null) {
-            PlayerDataErasure.erase(server, player.getUUID());
+        if (server == null || !PlayerDataErasure.eraseAndReport(server, player.getUUID())) {
+            ctx.getSource().sendFailure(Component.translatable("commands.nerolandcore.data.erase_incomplete"));
+            return 0;
         }
         ctx.getSource().sendSuccess(
                 () -> Component.translatable("commands.nerolandcore.data.erased_self"), false);
@@ -207,15 +208,31 @@ public final class CoreCommands {
             ctx.getSource().sendFailure(Component.translatable("commands.nerolandcore.data.invalid_uuid"));
             return 0;
         }
-        PlayerDataErasure.erase(server, player);
+        if (!PlayerDataErasure.eraseAndReport(server, player)) {
+            ctx.getSource().sendFailure(Component.translatable("commands.nerolandcore.data.erase_incomplete"));
+            return 0;
+        }
         ctx.getSource().sendSuccess(() -> Component.translatable("commands.nerolandcore.data.erased_player"), true);
         return Command.SINGLE_SUCCESS;
     }
 
     private static int purgeInactive(CommandContext<CommandSourceStack> ctx) {
-        int purged = PlayerDataErasure.purgeInactive(ctx.getSource().getServer());
+        PlayerDataErasure.PurgeResult result;
+        try {
+            result = PlayerDataErasure.purgeInactiveReport(ctx.getSource().getServer());
+        } catch (RuntimeException failure) {
+            NerolandCoreCommon.LOGGER.warn("[Neroland Core] Retention sweep could not refresh its retry state ({})",
+                    failure.getClass().getName());
+            ctx.getSource().sendFailure(Component.translatable("commands.nerolandcore.data.erase_incomplete"));
+            return 0;
+        }
+        if (result.failed() > 0) {
+            ctx.getSource().sendFailure(Component.translatable("commands.nerolandcore.data.purge_incomplete",
+                    result.purged(), result.failed()));
+            return 0;
+        }
         ctx.getSource().sendSuccess(
-                () -> Component.translatable("commands.nerolandcore.data.purged", purged), true);
+                () -> Component.translatable("commands.nerolandcore.data.purged", result.purged()), true);
         return Command.SINGLE_SUCCESS;
     }
 }

@@ -150,6 +150,43 @@ class ErasureConformanceTest {
         assertDoesNotThrow(() -> PlayerDataErasure.erase(null, player));
         assertTrue(ranAfterRuntimeException[0], "a RuntimeException must not abort the fan-out");
         assertTrue(ranAfterError[0], "an Error must not abort the fan-out either");
+        assertFalse(PlayerDataErasure.eraseAndReport(null, player), "failure must reach the caller");
+    }
+
+    @Test
+    void successfulErasureIsReportedToTheCaller() {
+        boolean[] ran = {false};
+        register((server, uuid) -> ran[0] = true);
+        assertTrue(PlayerDataErasure.eraseAndReport(null, UUID.randomUUID()));
+        assertTrue(ran[0]);
+    }
+
+    @Test
+    void retentionKeepsFailedPlayersEligibleForRetry() {
+        var activity = new PlayerActivity();
+        var successful = UUID.randomUUID();
+        var failed = UUID.randomUUID();
+        var later = UUID.randomUUID();
+        activity.touch(successful);
+        activity.touch(failed);
+        activity.touch(later);
+        long previous = activity.lastSeen(failed);
+        int[] backups = {0};
+        int purged = PlayerDataErasure.purgeStale(activity, List.of(successful, failed, later), player -> {
+            activity.forget(player);
+            return !player.equals(failed);
+        }, () -> backups[0]++);
+        assertEquals(2, purged);
+        assertFalse(activity.hasRecord(successful));
+        assertFalse(activity.hasRecord(later));
+        assertEquals(previous, activity.lastSeen(failed));
+        assertEquals(1, backups[0]);
+
+        assertThrows(IllegalStateException.class, () -> PlayerDataErasure.purgeStale(activity, List.of(failed), player -> {
+            activity.forget(player);
+            return false;
+        }, () -> { throw new IllegalStateException("backup failed"); }));
+        assertEquals(previous, activity.lastSeen(failed));
     }
 
     @Test

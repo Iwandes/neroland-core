@@ -97,5 +97,7 @@
   "commands.nerolandcore.data.erased_self": "[Neroland] Your stored Neroland data has been erased.",
   "commands.nerolandcore.data.invalid_uuid": "Not a valid UUID.",
   "commands.nerolandcore.data.erased_player": "[Neroland] Erased stored data for that player.",
+  "commands.nerolandcore.data.erase_incomplete": "[Neroland] Data erasure was incomplete. Contact a server administrator and retry.",
+  "commands.nerolandcore.data.purge_incomplete": "[Neroland] Retention sweep erased %s record(s); %s need another attempt. Check the server log.",
   "commands.nerolandcore.data.purged": "[Neroland] Retention sweep purged %s inactive record(s)."
 }

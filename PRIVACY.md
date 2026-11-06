@@ -45,6 +45,18 @@ To measure overall stability and performance, the mod also sends:
 
 Reports are also de-duplicated and hard-capped at 10 events per game session.
 
+## Data stored in the world
+
+Core stores player-associated progression, activity timestamps and link alerts in the world
+save. Installed providers can also store currency and reputation. These records are separate
+from telemetry. `/neroland data eraseme` requests erasure across registered systems; if any
+system reports a failure, the command reports that the request was incomplete.
+
+`dataRetentionDays` defaults to `0`, which disables inactivity purging. When a server operator
+enables it and runs a retention sweep, a partially failed erasure retains the original activity
+timestamp so a later sweep can retry. The world save and recovery backups remain under the server
+operator's control.
+
 ## How to opt out
 
 Set the following in `config/nerolandcore.properties` (created on first launch):

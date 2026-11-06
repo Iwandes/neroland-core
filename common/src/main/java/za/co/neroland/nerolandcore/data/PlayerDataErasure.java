@@ -3,6 +3,7 @@ package za.co.neroland.nerolandcore.data;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Predicate;
 
 import net.minecraft.server.MinecraftServer;
 
@@ -65,6 +66,11 @@ public final class PlayerDataErasure {
      * identified, and the summary line reports how many systems actually succeeded.
      */
     public static void erase(MinecraftServer server, UUID player) {
+        eraseAndReport(server, player);
+    }
+
+    /** Attempts every eraser and returns whether all of them succeeded. */
+    public static boolean eraseAndReport(MinecraftServer server, UUID player) {
         int failed = 0;
         for (PlayerDataEraser eraser : ERASERS) {
             try {
@@ -84,25 +90,50 @@ public final class PlayerDataErasure {
         } else {
             NerolandCoreCommon.LOGGER.info("[Neroland Core] Player data erased on request ({} systems).", total);
         }
+        return failed == 0;
     }
 
     /**
      * Erase data for every player inactive longer than the configured retention
-     * period ({@code dataRetentionDays}; 0 disables). @return the number purged.
+     * period ({@code dataRetentionDays}; 0 disables). @return the number fully purged.
      */
     public static int purgeInactive(MinecraftServer server) {
+        return purgeInactiveReport(server).purged();
+    }
+
+    public record PurgeResult(int purged, int failed) { }
+
+    public static PurgeResult purgeInactiveReport(MinecraftServer server) {
         int days = CoreConfig.DATA_RETENTION_DAYS.get();
         if (days <= 0) {
-            return 0;
+            return new PurgeResult(0, 0);
         }
-        List<UUID> stale = PlayerActivity.get(server).stalerThan(days);
-        for (UUID player : stale) {
-            erase(server, player);
-        }
-        if (!stale.isEmpty()) {
+        PlayerActivity activity = PlayerActivity.get(server);
+        List<UUID> stale = activity.stalerThan(days);
+        int purged = purgeStale(activity, stale, player -> eraseAndReport(server, player),
+                () -> SavedDataRecovery.backupNow(server.overworld(), PlayerActivity.TYPE, activity,
+                        PlayerActivity.ID.toString()));
+        if (purged > 0) {
             NerolandCoreCommon.LOGGER.info("[Neroland Core] Retention sweep purged {} inactive player record(s).",
-                    stale.size());
+                    purged);
         }
-        return stale.size();
+        return new PurgeResult(purged, stale.size() - purged);
+    }
+
+    static int purgeStale(PlayerActivity activity, List<UUID> stale, Predicate<UUID> erase, Runnable backup) {
+        int purged = 0;
+        boolean restored = false;
+        for (UUID player : stale) {
+            Long seen = activity.lastSeen(player);
+            if (erase.test(player)) {
+                purged++;
+            } else if (seen != null) {
+                // Keep the original inactivity timestamp so the next sweep retries a partial erasure.
+                activity.restoreLastSeen(player, seen);
+                restored = true;
+            }
+        }
+        if (restored) backup.run();
+        return purged;
     }
 }

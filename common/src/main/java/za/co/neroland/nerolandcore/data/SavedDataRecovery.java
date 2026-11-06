@@ -64,7 +64,8 @@ import za.co.neroland.nerolandcore.telemetry.NerolandCoreTelemetry;
  * store is re-encoded with its own {@link SavedDataType#codec() codec}; the file is only rewritten
  * when the content actually changed (hash compare) or the backup has gone missing, via
  * write-temp-then-atomic-rename so a crash mid-write can never corrupt the backup itself.
- * Best-effort by design: a backup failure only logs at debug and never affects gameplay.
+ * Periodic backup failures are best-effort and logged at debug. Explicit {@code backupNow}
+ * failures propagate so privacy erasure cannot be reported as complete with a stale backup.
  *
  * <p><b>Privacy (POPIA/GDPR).</b> The backup holds exactly the same fields as the vanilla primary
  * file, inside the same world save — so it is a <em>second copy of the same player-keyed rows</em>
@@ -161,6 +162,8 @@ public final class SavedDataRecovery {
      * re-encode the store, so a bulk operation (the retention sweep erasing many players in one go)
      * pays one encode + write per player per store. That is deliberate: correctness of the erasure
      * outranks the latency of an operator-triggered sweep.
+     *
+     * @throws IllegalStateException if the backup could not be written
      */
     public static <T extends SavedData> void backupNow(ServerLevel level, SavedDataType<T> type,
             T instance, String name) {
@@ -386,11 +389,13 @@ public final class SavedDataRecovery {
             state.lastWrittenHash = hash;
             state.written = true;
         } catch (Exception backupFailure) {
-            // Best-effort: a backup failure must never affect gameplay, and on a genuinely failing
-            // disk this would fire repeatedly — keep it at debug.
-            NerolandCoreCommon.LOGGER.debug("[Neroland Core] Could not write saved-data backup '{}'",
-                    name, backupFailure);
+            reportBackupFailure(name, force, backupFailure);
         }
+    }
+
+    static void reportBackupFailure(String name, boolean force, Exception failure) {
+        if (force) throw new IllegalStateException("Could not refresh saved-data backup", failure);
+        NerolandCoreCommon.LOGGER.debug("[Neroland Core] Could not write saved-data backup '{}'", name, failure);
     }
 
     /** One store in one dimension. {@code ResourceKey} hashes by identity, so this is cheap. */
