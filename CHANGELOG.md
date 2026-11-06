@@ -8,6 +8,12 @@ See [`docs/API-STABILITY.md`](docs/API-STABILITY.md) for the versioning policy.
 
 ## [Unreleased]
 
+## [1.17.4] - 2026-11-06
+
+### Changed
+
+- Report erasure and backup failures, retain failed records for retry during retention sweeps, and document world data handling. Allow translations to fall back to English while preserving placeholder checks.
+
 ## [1.17.3] - 2026-11-02
 
 ### Fixed
