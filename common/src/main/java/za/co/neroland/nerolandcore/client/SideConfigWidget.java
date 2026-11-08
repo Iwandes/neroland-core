@@ -256,9 +256,9 @@ public final class SideConfigWidget {
         for (RelativeFace face : RelativeFace.VALUES) {
             int[] xy = faceCell(l.netX, l.netY, face);
             if (in(mx, my, xy[0], xy[1], CELL, CELL)) {
-                if (button == 2) {
+                if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_MIDDLE) {
                     paletteFace = face;
-                } else if (button == 1) {
+                } else if (button == com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_RIGHT) {
                     send(SideConfigIntentPayload.setMode(pos, activeChannel.ordinal(), face.index(), SideMode.DISABLED.ordinal()));
                     if (cfg != null) {
                         cfg.setMode(face, SideMode.DISABLED);

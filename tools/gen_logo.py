@@ -210,7 +210,7 @@ def generate_gif(source=None, output=None):
         phase = 2 * math.pi * index / count
         intensity = (1 - math.cos(phase)) / 2
         sweep = np.exp(-((x / width - 0.5 - 0.27 * math.sin(phase)) / 0.045) ** 2)
-        light = glow * (intensity * 0.09 + sweep[:, :, None] * 0.12)
+        light = glow * (intensity * 0.16 + sweep[:, :, None] * 0.20)
         frame = np.clip(pixels + light * np.array(PLASMA), 0, 255)
         image = Image.fromarray(frame.astype(np.uint8), "RGB").convert("RGBA")
         sparks = Image.new("RGBA", image.size, (0, 0, 0, 0))
@@ -220,7 +220,7 @@ def generate_gif(source=None, output=None):
                 angle = phase + offset - trail * 0.035
                 sx = width * (0.5 + 0.323 * math.cos(angle))
                 sy = height * (0.36 + 0.323 * math.sin(angle))
-                radius = max(1, width * 0.0035 * (1 - trail / 12))
+                radius = max(1, width * 0.009 * (1 - trail / 12))
                 alpha = int(210 * (1 - trail / 9) ** 2)
                 draw.ellipse((sx - radius, sy - radius, sx + radius, sy + radius), fill=color + (alpha,))
         image.alpha_composite(sparks.filter(ImageFilter.GaussianBlur(max(1, width * 0.006))))

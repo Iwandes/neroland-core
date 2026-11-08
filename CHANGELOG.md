@@ -8,8 +8,13 @@ See [`docs/API-STABILITY.md`](docs/API-STABILITY.md) for the versioning policy.
 
 ## [Unreleased]
 
+## [1.17.5] - 2026-11-08
+
 ### Fixed
 
+- **Side configuration on Minecraft 26.3: left-click set a face to Disabled instead of cycling it.** Minecraft
+  26.3 numbers mouse buttons differently, so the machine side panel mixed up left and right clicks. Left-click
+  cycles a face's mode again and right-click sets it to Disabled, as on every other version.
 - **Forge jars accepted Forge builds older than the one they were compiled against.** The `forge` dependency
   floor was the major only (for example "any 54.x"), so an early build that lacks API added later in the same
   major could load Core and crash. Each Forge jar now requires at least the Forge build it was compiled against,
@@ -48,6 +53,8 @@ See [`docs/API-STABILITY.md`](docs/API-STABILITY.md) for the versioning policy.
   Provider creation and deferred-register attachment now share a lock, preventing parallel mod
   constructors from losing registrations in the shared queue. Applied the same fix on NeoForge.
   Failed attachments remain pending instead of being marked as attached.
+
+[1.17.5]: https://github.com/Neroland/neroland-core/releases/tag/v1.17.5
 
 [1.17.3]: https://github.com/Neroland/neroland-core/releases/tag/v1.17.3
 
