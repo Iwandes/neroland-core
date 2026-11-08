@@ -8,6 +8,13 @@ See [`docs/API-STABILITY.md`](docs/API-STABILITY.md) for the versioning policy.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Forge jars accepted Forge builds older than the one they were compiled against.** The `forge` dependency
+  floor was the major only (for example "any 54.x"), so an early build that lacks API added later in the same
+  major could load Core and crash. Each Forge jar now requires at least the Forge build it was compiled against,
+  so an older Forge shows a clear "update Forge" message instead.
+
 ## [1.17.4] - 2026-11-06
 
 ### Changed
