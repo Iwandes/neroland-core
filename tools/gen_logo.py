@@ -16,6 +16,7 @@ Outputs:
 import math
 import os
 import random
+import argparse
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
@@ -191,6 +192,44 @@ def wordmark(base):
     return base
 
 
+def generate_gif(source=None, output=None):
+    source = source or os.path.join(OUT, "nerolandcore_logo.png")
+    output = output or os.path.join(OUT, "nerolandcore_logo.gif")
+    with Image.open(source) as image:
+        logo = image.convert("RGB")
+    logo.thumbnail((400, 400), Image.Resampling.LANCZOS)
+
+    width, height = logo.size
+    y, x = np.mgrid[0:height, 0:width]
+    distance = ((x / width - 0.5) / 0.24) ** 2 + ((y / height - 0.36) / 0.24) ** 2
+    glow = np.exp(-distance * 2)[:, :, None]
+    pixels = np.asarray(logo, dtype=np.float32)
+    frames = []
+    count = 16
+    for index in range(count):
+        phase = 2 * math.pi * index / count
+        intensity = (1 - math.cos(phase)) / 2
+        sweep = np.exp(-((x / width - 0.5 - 0.27 * math.sin(phase)) / 0.045) ** 2)
+        light = glow * (intensity * 0.09 + sweep[:, :, None] * 0.12)
+        frame = np.clip(pixels + light * np.array(PLASMA), 0, 255)
+        image = Image.fromarray(frame.astype(np.uint8), "RGB").convert("RGBA")
+        sparks = Image.new("RGBA", image.size, (0, 0, 0, 0))
+        draw = ImageDraw.Draw(sparks)
+        for offset, color in ((0, PLASMA), (math.pi, VOID_CRYS)):
+            for trail in range(8, -1, -1):
+                angle = phase + offset - trail * 0.035
+                sx = width * (0.5 + 0.323 * math.cos(angle))
+                sy = height * (0.36 + 0.323 * math.sin(angle))
+                radius = max(1, width * 0.0035 * (1 - trail / 12))
+                alpha = int(210 * (1 - trail / 9) ** 2)
+                draw.ellipse((sx - radius, sy - radius, sx + radius, sy + radius), fill=color + (alpha,))
+        image.alpha_composite(sparks.filter(ImageFilter.GaussianBlur(max(1, width * 0.006))))
+        image.alpha_composite(sparks)
+        frames.append(image.convert("RGB"))
+    frames[0].save(output, save_all=True, append_images=frames[1:], duration=180, loop=0, optimize=True)
+    return output
+
+
 def main():
     img = background()
     img = add_stars(img)
@@ -211,4 +250,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Generate the Neroland Core logo.")
+    parser.add_argument("--gif", action="store_true", help="animate the existing master PNG")
+    args = parser.parse_args()
+    if args.gif:
+        print("wrote", os.path.relpath(generate_gif(), ROOT))
+    else:
+        main()
